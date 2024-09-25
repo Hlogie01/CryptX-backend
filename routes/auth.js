@@ -8,12 +8,24 @@ const router = express.Router();
 // Register a new user
 router.post('/register', async (req, res) => {
   const { email, password } = req.body;
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const sql = 'INSERT INTO users (email, password) VALUES (?, ?)';
 
-  db.query(sql, [email, hashedPassword], (err, result) => {
-    if (err) throw err;
-    res.status(201).send('User registered');
+  // Check if the user already exists
+  const checkUserSql = 'SELECT * FROM users WHERE email = ?';
+  db.query(checkUserSql, [email], async (err, result) => {
+    if (err) return res.status(500).send('Server error');
+
+    if (result.length > 0) {
+      return res.status(400).send('User already exists');
+    }
+
+    // Hash the password and insert the user into the database
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const sql = 'INSERT INTO users (email, password) VALUES (?, ?)';
+    
+    db.query(sql, [email, hashedPassword], (err) => {
+      if (err) return res.status(500).send('Server error');
+      res.status(201).send('User registered');
+    });
   });
 });
 
@@ -23,7 +35,7 @@ router.post('/login', async (req, res) => {
   const sql = 'SELECT * FROM users WHERE email = ?';
 
   db.query(sql, [email], async (err, result) => {
-    if (err) throw err;
+    if (err) return res.status(500).send('Server error');
 
     if (result.length === 0 || !(await bcrypt.compare(password, result[0].password))) {
       return res.status(401).send('Invalid credentials');
@@ -41,7 +53,9 @@ router.get(
   '/google/callback',
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
-    res.redirect(`http://localhost:3000/dashboard?token=${req.user.token}`);
+    // User is authenticated
+    const token = jwt.sign({ email: req.user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    res.redirect(`http://localhost:3000/dashboard?token=${token}`);
   }
 );
 
