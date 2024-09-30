@@ -17,7 +17,10 @@ router.post('/register', async (req, res) => {
   // Check if the user already exists
   const checkUserSql = 'SELECT * FROM users WHERE email = ?';
   db.query(checkUserSql, [email], async (err, result) => {
-    if (err) return res.status(500).send('Server error');
+    if (err) {
+      console.error('Database error:', err); // Log the error for debugging
+      return res.status(500).send('Server error');
+    }
 
     if (result.length > 0) {
       return res.status(400).send('User already exists');
@@ -29,10 +32,14 @@ router.post('/register', async (req, res) => {
       const sql = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
       
       db.query(sql, [username, email, hashedPassword], (err) => {
-        if (err) return res.status(500).send('Server error');
+        if (err) {
+          console.error('Error inserting user:', err); // Log the error for debugging
+          return res.status(500).send('Server error');
+        }
         res.status(201).send('User registered');
       });
     } catch (error) {
+      console.error('Error hashing password:', error); // Log the error for debugging
       res.status(500).send('Error hashing password');
     }
   });
@@ -49,7 +56,10 @@ router.post('/login', async (req, res) => {
 
   const sql = 'SELECT * FROM users WHERE email = ?';
   db.query(sql, [email], async (err, result) => {
-    if (err) return res.status(500).send('Server error');
+    if (err) {
+      console.error('Database error:', err); // Log the error for debugging
+      return res.status(500).send('Server error');
+    }
 
     if (result.length === 0 || !(await bcrypt.compare(password, result[0].password))) {
       return res.status(401).send('Invalid credentials');
@@ -75,3 +85,4 @@ router.get(
 );
 
 module.exports = router;
+
