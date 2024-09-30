@@ -1,5 +1,6 @@
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs'); 
+
 const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const db = require('../db');
@@ -7,7 +8,7 @@ const router = express.Router();
 
 // Register a new user
 router.post('/register', async (req, res) => {
-  const { email, password } = req.body;
+  const { username, email, password } = req.body;
 
   // Check if the user already exists
   const checkUserSql = 'SELECT * FROM users WHERE email = ?';
@@ -20,9 +21,9 @@ router.post('/register', async (req, res) => {
 
     // Hash the password and insert the user into the database
     const hashedPassword = await bcrypt.hash(password, 10);
-    const sql = 'INSERT INTO users (email, password) VALUES (?, ?)';
+    const sql = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
     
-    db.query(sql, [email, hashedPassword], (err) => {
+    db.query(sql, [username, email, hashedPassword], (err) => {
       if (err) return res.status(500).send('Server error');
       res.status(201).send('User registered');
     });
@@ -54,7 +55,7 @@ router.get(
   passport.authenticate('google', { failureRedirect: '/' }),
   (req, res) => {
     // User is authenticated
-    const token = jwt.sign({ email: req.user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ email: req.user.emails[0].value }, process.env.JWT_SECRET, { expiresIn: '1h' });
     res.redirect(`http://localhost:3000/dashboard?token=${token}`);
   }
 );
