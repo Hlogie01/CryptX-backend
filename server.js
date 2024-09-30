@@ -11,7 +11,11 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:3000', // Replace with your frontend URL
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true // Allow credentials if needed
+}));
 app.use(bodyParser.json());
 app.use(session({ 
   secret: process.env.JWT_SECRET, 
@@ -34,13 +38,8 @@ app.get('/', (req, res) => {
   res.send('API is running');
 });
 
-// Error handling middleware (optional but recommended)
-app.use((err, req, res, next) => {
-  console.error(err.stack);  // Log the error stack for debugging
-  res.status(500).send('Something broke!');
-});
-
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
