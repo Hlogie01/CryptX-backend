@@ -1,7 +1,6 @@
 const express = require('express');
-const bcrypt = require('bcryptjs'); 
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const passport = require('passport');
 const db = require('../db'); // Ensure this points to your DB connection file
 const router = express.Router();
 
@@ -30,13 +29,18 @@ router.post('/register', async (req, res) => {
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
       const sql = 'INSERT INTO users (username, email, password) VALUES (?, ?, ?)';
-      
+
       db.query(sql, [username, email, hashedPassword], (err) => {
         if (err) {
           console.error('Error inserting user:', err); // Log the error for debugging
           return res.status(500).send('Server error');
         }
-        res.status(201).send('User registered');
+
+        // Create a token for the new user
+        const token = jwt.sign({ email }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        // Send the token to the frontend to redirect to dashboard
+        res.status(201).json({ token });
       });
     } catch (error) {
       console.error('Error hashing password:', error); // Log the error for debugging
@@ -71,18 +75,6 @@ router.post('/login', async (req, res) => {
   });
 });
 
-// Google OAuth login
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-router.get(
-  '/google/callback',
-  passport.authenticate('google', { failureRedirect: '/' }),
-  (req, res) => {
-    // User is authenticated
-    const token = jwt.sign({ email: req.user.emails[0].value }, process.env.JWT_SECRET, { expiresIn: '1h' });
-    res.redirect(`http://localhost:3000/dashboard?token=${token}`);
-  }
-);
-
 module.exports = router;
+
 

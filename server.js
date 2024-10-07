@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 5001;
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:3000', // Replace with your frontend URL
+  origin: 'http://localhost:3001',
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true // Allow credentials if needed
 }));
